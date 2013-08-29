@@ -14,7 +14,7 @@ def open_global_csv(filename, labelList):
     return W
 
 #GLOBAL VARIABLES
-BIBCODE_LIST_FILENAME='ssp_referreed_list'
+BIBCODE_LIST_FILENAME=raw_input('Bibcode list name: ')
 
 def ensure_dir(d):
     if not os.path.exists(d):
@@ -40,7 +40,6 @@ def adsQuery(bibcode):
 	apiBib='bibcode:'+bibcode
 	Q={'dev_key':ADS_DEV_KEY, 'q':apiBib, 'fl':'aff'}
 	adsRequest=requests.get(ADS_URL_BASE, params=Q)
-	print(adsRequest.text)
 	ADSreturndict=adsRequest.json()
 	return ADSreturndict
 
