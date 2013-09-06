@@ -14,7 +14,7 @@ def open_global_csv(filename, labelList):
     return W
 
 #GLOBAL VARIABLES
-BIBCODE_LIST_FILENAME=raw_input('Bibcode list name: ')
+BIBCODE_LIST_FILENAME=raw_input('Bibcode list file name: ')
 
 def ensure_dir(d):
     if not os.path.exists(d):
@@ -23,7 +23,7 @@ ensure_dir(BIBCODE_LIST_FILENAME)
 ensure_dir(BIBCODE_LIST_FILENAME+"\\bibcodes")
 
 ADS_URL_BASE='http://labs.adsabs.harvard.edu/adsabs/api/search/'
-ADS_DEV_KEY=open('API_KEY.txt', 'r').read
+ADS_DEV_KEY=open('API_KEY.txt', 'r').read()
 GEO_URL_BASE='http://maps.googleapis.com/maps/api/geocode/json'
 ERROR_WRITER=open_global_csv(BIBCODE_LIST_FILENAME+'\\geoErrors', ['bibcode', 'loc', 'status','count','time'])
 #^Opens csv to be used to record bibcodes and locations where the geocoordinates could not be found.
