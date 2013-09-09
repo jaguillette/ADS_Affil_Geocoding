@@ -20,18 +20,19 @@ def ensure_dir(d):
     if not os.path.exists(d):
         os.makedirs(d)
 ensure_dir(BIBCODE_LIST_FILENAME)
-ensure_dir(BIBCODE_LIST_FILENAME+"\\bibcodes")
+BIB_PATH=os.path.abspath(BIBCODE_LIST_FILENAME)
+ensure_dir(BIB_PATH+"/bibcodes")
 
 ADS_URL_BASE='http://labs.adsabs.harvard.edu/adsabs/api/search/'
 ADS_DEV_KEY=open('API_KEY.txt', 'r').read()
 GEO_URL_BASE='http://maps.googleapis.com/maps/api/geocode/json'
-ERROR_WRITER=open_global_csv(BIBCODE_LIST_FILENAME+'\\geoErrors', ['bibcode', 'loc', 'status','count','time'])
+ERROR_WRITER=open_global_csv(BIB_PATH+'/geoErrors', ['bibcode', 'loc', 'status','count','time'])
 #^Opens csv to be used to record bibcodes and locations where the geocoordinates could not be found.
-NOAFFIL_WRITER=open_global_csv(BIBCODE_LIST_FILENAME+'\\noAffil', ['bibcode'])
+NOAFFIL_WRITER=open_global_csv(BIB_PATH+'/noAffil', ['bibcode'])
 #^Opens csv to be used to record bibcodes with no affiliation data.
-NOBIB_WRITER=open_global_csv(BIBCODE_LIST_FILENAME+'\\noBib', ['bibcode'])
+NOBIB_WRITER=open_global_csv(BIB_PATH+'/noBib', ['bibcode'])
 #^Opens csv to be used to record bibcodes that the API could not find a record for.
-SET_WRITER=open_global_csv(BIBCODE_LIST_FILENAME+'\\geo_affil_set', ['bibcode','Location','lat','long','address','country','state','trusted','count'])
+SET_WRITER=open_global_csv(BIB_PATH+'/geo_affil_set', ['bibcode','Location','lat','long','address','country','state','trusted','count'])
 #^Opens csv to be used to record all information for the current set of bibcodes.
 
 #Function takes a bibcode as an argument, returns a dictionary from the json that the ADS API returns.
@@ -85,7 +86,7 @@ def getAddrDict(bibcode):
 
 #Opens a csv file to write bibcode affiliation geocoding info to, returns a csv writer object.
 def open_output_csv(bibcode):
-    csvfile=open(BIBCODE_LIST_FILENAME+'\\bibcodes\\'+bibcode+'.csv', 'wb+')
+    csvfile=open(BIB_PATH+'/bibcodes/'+bibcode+'.csv', 'wb+')
     W=csv.writer(csvfile, delimiter=',', quotechar='"')
     #row headers below
     W.writerow(['bibcode','Location','lat','long','address','country','state','trusted','count'])
