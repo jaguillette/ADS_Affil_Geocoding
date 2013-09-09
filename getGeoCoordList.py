@@ -78,7 +78,7 @@ def getAddrDict(bibcode):
 		addrList=[]
 		return 0
 	except IndexError:
-		print "Could not process "+bibcode+". The ADS API returned no results."
+		print "Could not process {0}. The ADS API returned no results.".format(bibcode)
 		writeList = [bibcode]
 		NOBIB_WRITER.writerow(writeList)
 		addrList=[]
@@ -86,7 +86,7 @@ def getAddrDict(bibcode):
 
 #Opens a csv file to write bibcode affiliation geocoding info to, returns a csv writer object.
 def open_output_csv(bibcode):
-    csvfile=open(BIB_PATH+'/bibcodes/'+bibcode+'.csv', 'wb+')
+    csvfile=open('{0}/bibcodes/{1}.csv'.format(BIB_PATH,bibcode), 'wb+')
     W=csv.writer(csvfile, delimiter=',', quotechar='"')
     #row headers below
     W.writerow(['bibcode','Location','lat','long','address','country','state','trusted','count'])
@@ -142,7 +142,7 @@ def geoQueryContainer(bibcode):
 	addrDict=getAddrDict(bibcode)
 	try:
 		addrLen=str(len(addrDict))
-		print "Bibcode: "+bibcode+" has {0} affiliation addresses to process.".format(addrLen)
+		print "Bibcode: {0} has {1} affiliation addresses to process.".format(bibcode, addrLen)
 		for i in addrDict.keys():
 			writeList=geoQuery(i,bibcode,addrDict[i])
 			time.sleep(1)
