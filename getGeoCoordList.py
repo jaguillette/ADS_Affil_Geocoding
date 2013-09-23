@@ -4,8 +4,8 @@ import csv
 import time
 import os
 
-#Function to define global CSV writer objects.
 def open_global_csv(filename, labelList):
+	"""Function to define global CSV writer objects."""
     csvfile=open(filename+'.csv', 'wb+')
     W=csv.writer(csvfile, delimiter=',', quotechar='"')
     #row headers below
@@ -15,6 +15,7 @@ def open_global_csv(filename, labelList):
 
 #GLOBAL VARIABLES
 BIBCODE_LIST_FILENAME=raw_input('Bibcode list file name: ')
+print("")#purely aesthetic spacing.
 
 def ensure_dir(d):
     if not os.path.exists(d):
@@ -34,9 +35,10 @@ NOBIB_WRITER=open_global_csv(BIB_PATH+'/noBib', ['bibcode'])
 #^Opens csv to be used to record bibcodes that the API could not find a record for.
 SET_WRITER=open_global_csv(BIB_PATH+'/geo_affil_set', ['bibcode','Location','lat','long','address','country','state','trusted','count'])
 #^Opens csv to be used to record all information for the current set of bibcodes.
+#END GLOBAL VARIABLES
 
-#Function takes a bibcode as an argument, returns a dictionary from the json that the ADS API returns.
 def adsQuery(bibcode):
+	"""Takes a bibcode as an argument, returns a dictionary from the json that the ADS API returns."""
 	time.sleep(1)
 	apiBib='bibcode:'+bibcode
 	Q={'dev_key':ADS_DEV_KEY, 'q':apiBib, 'fl':'aff'}
@@ -44,8 +46,8 @@ def adsQuery(bibcode):
 	ADSreturndict=adsRequest.json()
 	return ADSreturndict
 
-#Cleaner for addresses, splits addresses with semicolons, takes the first affiliation. Also takes out any leading whitespace.
 def cleanLocation(loc):
+	"""Cleaner for addresses, splits addresses with semicolons, takes the first affiliation. Also takes out any leading whitespace."""
 	clean_01=loc.encode('utf-8')
 	if ';' in clean_01:
 		clean_02=clean_01.split(';')
@@ -54,10 +56,8 @@ def cleanLocation(loc):
 	clean_03=[i.lstrip() for i in clean_02]
 	return clean_03
 
-#Makes a list of addresses from the affiliations of the ADS query for one bibcode, sends them to the cleaning function,
-#then takes the set of unique affiliations and returns them as a dictionary, 
-#such that the affiliation is paired with the number of times it occured in that bibcode.
 def getAddrDict(bibcode):
+	"""Makes a list of addresses from the affiliations of the ADS query for one bibcode, sends them to the cleaning function, then takes the set of unique affiliations and returns them as a dictionary, such that the affiliation is paired with the number of times it occured in that bibcode."""
 	ads_dict=adsQuery(bibcode)
 	cleanAddrList=[]
 	addrDict={}
@@ -84,8 +84,8 @@ def getAddrDict(bibcode):
 		addrList=[]
 		return 0
 
-#Opens a csv file to write bibcode affiliation geocoding info to, returns a csv writer object.
 def open_output_csv(bibcode):
+	"""Opens a csv file to write bibcode affiliation geocoding info to, returns a csv writer object."""
     csvfile=open('{0}/bibcodes/{1}.csv'.format(BIB_PATH,bibcode), 'wb+')
     W=csv.writer(csvfile, delimiter=',', quotechar='"')
     #row headers below
@@ -93,51 +93,53 @@ def open_output_csv(bibcode):
     #writes header
     return W
 
-#Takes a location and the bibcode and count from the address dictionary, and sends it to a Google API for geocoding.
-#Responses are written into a list, to be written to later.
-#each column to be written to is assigned its own variable, and encoded in utf-8
 def geoQuery(loc, bibcode, count):
+	"""Takes a location and the bibcode and count from the address dictionary, and sends it to a Google API for geocoding. Responses are written into a list, to be written to later. Each column to be written to is assigned its own variable, and encoded in utf-8"""
 	Q={'address':loc, 'sensor':'false'}
-	geoRequest=requests.get(GEO_URL_BASE, params=Q)
-	geoDict=geoRequest.json()
-	if geoDict['status'] == 'OK':
-		lat=geoDict['results'][0]['geometry']['location']['lat']
-		lng=geoDict['results'][0]['geometry']['location']['lng']
-		country='NULL'
-		state='NULL'
-		trusted=False
-		for i in geoDict['results'][0]['address_components']:
-			if 'country' in i['types']:
-				country=i['long_name']
-			if 'administrative_area_level_1' in i['types']:
-				state=i['long_name']
-			if 'route' in i['types']:
-				trusted=True
-		address=geoDict['results'][0]['formatted_address']
-		lat=str(lat).encode('utf-8')
-		lng=str(lng).encode('utf-8')
-		country=country.encode('utf-8')
-		state=state.encode('utf-8')
-		address=address.encode('utf-8')
-		count=str(count).encode('utf-8')
-		bibcode=bibcode.encode('utf-8')
-		writeList=[bibcode,loc,lat,lng,address,country,state,trusted,count]
-	else:
-		writeList=[bibcode, loc, geoDict['status'],count,time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())]
-	return writeList
+	try:
+		geoRequest=requests.get(GEO_URL_BASE, params=Q)
+		geoDict=geoRequest.json()
+		if geoDict['status'] == 'OK':
+			lat=geoDict['results'][0]['geometry']['location']['lat']
+			lng=geoDict['results'][0]['geometry']['location']['lng']
+			country='NULL'
+			state='NULL'
+			trusted=False
+			for i in geoDict['results'][0]['address_components']:
+				if 'country' in i['types']:
+					country=i['long_name']
+				if 'administrative_area_level_1' in i['types']:
+					state=i['long_name']
+				if 'route' in i['types']:
+					trusted=True
+			address=geoDict['results'][0]['formatted_address']
+			lat=str(lat).encode('utf-8')
+			lng=str(lng).encode('utf-8')
+			country=country.encode('utf-8')
+			state=state.encode('utf-8')
+			address=address.encode('utf-8')
+			count=str(count).encode('utf-8')
+			bibcode=bibcode.encode('utf-8')
+			writeList=[bibcode,loc,lat,lng,address,country,state,trusted,count]
+		else:
+			writeList=[bibcdoe, loc, geoDict['status'],count,time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())]
+		return writeList
+	except requests.exceptions.ConnectionError, e:
+		print("Could not get geocoding information for {0}. Connection error:".format(bibcode))
+		print(e)
+		writeList=[bibcode, loc, "ConnectionError",count,time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())]
+		return writeList
 
-#takes writelist from previous function, as well as writer, determines whether query was successful based on writer length
-#Writes to either (error csv) or (set csv and bibcode csv)
 def geoQueryWriter(writeList, csvWriter):
+	"""Takes writelist from previous function, as well as writer, determines whether query was successful based on writer length. Writes to either (error csv) or (set csv and bibcode csv)"""
 	if len(writeList)>=6:
 		csvWriter.writerow(writeList)
 		SET_WRITER.writerow(writeList)
 	elif len(writeList)==5:
 		ERROR_WRITER.writerow(writeList)
 
-#container that runs the queries and writers, takes a bibcode to pass all the way down the chain of functions
-#also reports status of script via print, makes script wait to reduce timeout errors from Google.
 def geoQueryContainer(bibcode):
+	"""#container that runs the queries and writers, takes a bibcode to pass all the way down the chain of functions. Also reports status of script via print, makes script wait to reduce timeout errors from Google."""
 	csvWriter=open_output_csv(bibcode)
 	addrDict=getAddrDict(bibcode)
 	try:
@@ -151,15 +153,35 @@ def geoQueryContainer(bibcode):
 	except TypeError:
 		return 0
 
-#opens bibcode list, one row of a lot of bibcodes.
-def openBibCodeList(name):
+def openCSVreader(name):
+	"""opens bibcode list, one row of a lot of bibcodes."""
 	csvfile=open("{0}.csv".format(name), 'rb')
 	R=csv.reader(csvfile, delimiter=',', quotechar='"')
 	return R
 
-#Takes a csv with a list of bibcodes in one row, then tries to get the geocoding for all of them.
+def dedupeByAddress(csvname):
+    R=openCSVreader(csvname)
+    tempdict={}
+    for row in R:
+        if row[4]!="address":
+            lat=row[2]
+            lon=row[3]
+            addr=row[4]
+            country=row[5]
+            state=row[6]
+            count=int(row[8])
+            if addr not in tempdict.keys():
+                tempdict[addr]=[lat,lon,addr,state,country,count]
+            else:
+                tempdict[addr][5]+=count
+	dedupedwriter=open_global_csv("{0}/geo_affil_set_deduped".format(BIB_PATH),["lat","long","address","state","country","count"])
+    for key in tempdict.keys():
+        dedupedwriter.writerow(tempdict[key])
+    return 0
+
 def geocodeBibcodeList(listname):
-	BibList=[row[0] for row in openBibCodeList(listname)]
+	"""Takes a csv with a list of bibcodes in one row, then tries to get the geocoding for all of them."""
+	BibList=[row[0] for row in openCSVreader(listname)]
 	LenBibList=len(BibList)
 	counter=1
 	for code in BibList:
@@ -169,6 +191,11 @@ def geocodeBibcodeList(listname):
 		print "{0} of {1} bibcodes processed.".format(strCounter, strLenBibList)
 		print ""
 		counter+=1
+	print("Finished geocoding. De-duplicating affiliations by address.")
 	return 0
 
 geocodeBibcodeList(BIBCODE_LIST_FILENAME)
+
+dedupeByAddress("{0}/geo_affil_set".format(BIB_PATH))
+print("")
+print("Complete!")
