@@ -38,7 +38,8 @@ NOBIB_WRITER=open_global_csv(BIB_PATH+'/noBib', ['bibcode'])
 SET_WRITER=open_global_csv(BIB_PATH+'/geo_affil_set', ['bibcode','Location','lat','long','address','country','state','trusted','count'])
 #^Opens csv to be used to record all information for the current set of bibcodes.
 
-ADDRESSES_DICT={}
+with open('collected_addresses.json', 'rb') as fp:
+    ADDRESSES_DICT = json.load(fp)
 
 #----END GLOBAL VARIABLES----
 
@@ -133,6 +134,7 @@ def geoQuery(loc, bibcode, count):
 			else:
 				writeList=[bibcode, loc, geoDict['status'],count,time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())]
 				ADDRESSES_DICT[loc]={'location':('unknown','unknown','unknown','unknown','unknown','unknown'),'count':count}
+			time.sleep(1)
 			return writeList
 		except requests.exceptions.ConnectionError, e:
 			print("Could not get geocoding information for {0}. Connection error:".format(bibcode))
@@ -171,10 +173,9 @@ def geoQueryContainer(bibcode):
 	locDict=getLocDict(bibcode)
 	try:
 		addrLen=str(len(locDict))
-		print "Bibcode: {0} has {1} affiliation locations to process.".format(bibcode, addrLen)
+		print "Bibcode: {0} has {1} affiliation location(s) to process.".format(bibcode, addrLen)
 		for i in locDict.keys():
 			writeList=geoQuery(i,bibcode,locDict[i])
-			time.sleep(1)
 			geoQueryWriter(writeList, csvWriter)
 		return 0
 	except TypeError:
@@ -219,10 +220,12 @@ def geocodeBibcodeList(listname):
 		print "{0} of {1} bibcodes processed.".format(strCounter, strLenBibList)
 		print ""
 		counter+=1
-	print("Finished geocoding. De-duplicating affiliations by address.")
+	print("Finished geocoding. {0} unique affiliations were geocoded. Now de-duplicating affiliations by address.".format(str(len(ADDRESSES_DICT))))
 	return 0
 
 geocodeBibcodeList(BIBCODE_LIST_FILENAME)
+with open('collected_addresses.json', 'wb+') as fp:
+    json.dump(ADDRESSES_DICT, fp)
 
 dedupeByAddress("{0}/geo_affil_set".format(BIB_PATH))
 print("")
