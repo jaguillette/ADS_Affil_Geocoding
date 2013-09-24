@@ -13,11 +13,13 @@ def open_global_csv(filename, labelList):
     #writes header
     return W
 
-#GLOBAL VARIABLES
+#----START GLOBAL VARIABLES----
+
 BIBCODE_LIST_FILENAME=raw_input('Bibcode list file name: ')
 print("")#purely aesthetic spacing.
 
 def ensure_dir(d):
+	"""Makes sure a directory exists, and if it doesn't, it creates one."""
     if not os.path.exists(d):
         os.makedirs(d)
 ensure_dir(BIBCODE_LIST_FILENAME)
@@ -35,7 +37,8 @@ NOBIB_WRITER=open_global_csv(BIB_PATH+'/noBib', ['bibcode'])
 #^Opens csv to be used to record bibcodes that the API could not find a record for.
 SET_WRITER=open_global_csv(BIB_PATH+'/geo_affil_set', ['bibcode','Location','lat','long','address','country','state','trusted','count'])
 #^Opens csv to be used to record all information for the current set of bibcodes.
-#END GLOBAL VARIABLES
+
+#----END GLOBAL VARIABLES----
 
 def adsQuery(bibcode):
 	"""Takes a bibcode as an argument, returns a dictionary from the json that the ADS API returns."""
@@ -47,14 +50,15 @@ def adsQuery(bibcode):
 	return ADSreturndict
 
 def cleanLocation(loc):
-	"""Cleaner for addresses, splits addresses with semicolons, takes the first affiliation. Also takes out any leading whitespace."""
+	"""Cleaner for addresses, splits addresses with semicolons, takes the first affiliation. Also takes out any leading whitespace. clean_01 ensures utf-8 encoding, clean_02 splits clean_01 on ';'' if they're present, and makes clean_01 a list if they're not to normalize operations in both cases. clean_03 strips out leading whitespace from all items in clean_02. clean_04 removes empty strings from clean_03."""
 	clean_01=loc.encode('utf-8')
 	if ';' in clean_01:
 		clean_02=clean_01.split(';')
 	else:
 		clean_02=[clean_01]
 	clean_03=[i.lstrip() for i in clean_02]
-	return clean_03
+	clean_04=filter(None,clean_03)
+	return clean_04
 
 def getAddrDict(bibcode):
 	"""Makes a list of addresses from the affiliations of the ADS query for one bibcode, sends them to the cleaning function, then takes the set of unique affiliations and returns them as a dictionary, such that the affiliation is paired with the number of times it occured in that bibcode."""
@@ -184,8 +188,8 @@ def geocodeBibcodeList(listname):
 	BibList=[row[0] for row in openCSVreader(listname)]
 	LenBibList=len(BibList)
 	counter=1
-	for code in BibList:
-		geoQueryContainer(code)
+	for bibcode in BibList:
+		geoQueryContainer(bibcode)
 		strCounter=str(counter)
 		strLenBibList=str(LenBibList)
 		print "{0} of {1} bibcodes processed.".format(strCounter, strLenBibList)
