@@ -63,32 +63,32 @@ def cleanLocation(loc):
 	clean_05=[location.translate(None,",.")]
 	return clean_05
 
-def getAddrDict(bibcode):
-	"""Makes a list of addresses from the affiliations of the ADS query for one bibcode, sends them to the cleaning function, then takes the set of unique affiliations and returns them as a dictionary, such that the affiliation is paired with the number of times it occured in that bibcode."""
+def getLocDict(bibcode):
+	"""Makes a list of locations from the affiliations of the ADS query for one bibcode, sends them to the cleaning function, then takes the set of unique affiliations and returns them as a dictionary, such that the affiliation is paired with the number of times it occured in that bibcode."""
 	ads_dict=adsQuery(bibcode)
-	cleanAddrList=[]
-	addrDict={}
+	cleanLocList=[]
+	locDict={}
 	try:
-		addrList=ads_dict['results']['docs'][0]['aff']
-		for i in addrList:
+		locList=ads_dict['results']['docs'][0]['aff']
+		for i in locList:
 			loc=cleanLocation(i)
 			for ele in loc:
-				cleanAddrList.append(ele)
-				uniqueAddrList=list(set(cleanAddrList))
-				for i in uniqueAddrList:
-					addrDict[i]=cleanAddrList.count(i)
-		return addrDict
+				cleanLocList.append(ele)
+				uniqueLocList=list(set(cleanLocList))
+				for location in uniqueLocList:
+					locDict[location]=cleanLocList.count(location)
+		return locDict
 	except KeyError:
 		print "Could not process {0}. Affiliations not recorded.".format(bibcode)
 		writeList = [bibcode]
 		NOAFFIL_WRITER.writerow(writeList)
-		addrList=[]
+		locList=[]
 		return 0
 	except IndexError:
 		print "Could not process {0}. The ADS API returned no results.".format(bibcode)
 		writeList = [bibcode]
 		NOBIB_WRITER.writerow(writeList)
-		addrList=[]
+		locList=[]
 		return 0
 
 def open_output_csv(bibcode):
@@ -101,7 +101,7 @@ def open_output_csv(bibcode):
     return W
 
 def geoQuery(loc, bibcode, count):
-	"""Takes a location and the bibcode and count from the address dictionary, and sends it to a Google API for geocoding. Responses are written into a list, to be written to later. Each column to be written to is assigned its own variable, and encoded in utf-8"""
+	"""Takes a location (loc) and the bibcode and count from the address dictionary, and sends it to a Google API for geocoding. Responses are written into a list, to be written to later. Each column to be written to is assigned its own variable, and encoded in utf-8"""
 	Q={'address':loc, 'sensor':'false'}
 	try:
 		geoRequest=requests.get(GEO_URL_BASE, params=Q)
@@ -148,12 +148,12 @@ def geoQueryWriter(writeList, csvWriter):
 def geoQueryContainer(bibcode):
 	"""container that runs the queries and writers, takes a bibcode to pass all the way down the chain of functions. Also reports status of script via print, makes script wait to reduce timeout errors from Google."""
 	csvWriter=open_output_csv(bibcode)
-	addrDict=getAddrDict(bibcode)
+	locDict=getLocDict(bibcode)
 	try:
-		addrLen=str(len(addrDict))
-		print "Bibcode: {0} has {1} affiliation addresses to process.".format(bibcode, addrLen)
-		for i in addrDict.keys():
-			writeList=geoQuery(i,bibcode,addrDict[i])
+		addrLen=str(len(locDict))
+		print "Bibcode: {0} has {1} affiliation locations to process.".format(bibcode, addrLen)
+		for i in locDict.keys():
+			writeList=geoQuery(i,bibcode,locDict[i])
 			time.sleep(1)
 			geoQueryWriter(writeList, csvWriter)
 		return 0
