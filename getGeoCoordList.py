@@ -40,6 +40,8 @@ SET_WRITER=open_global_csv(BIB_PATH+'/geo_affil_set', ['bibcode','Location','lat
 
 with open('collected_addresses.json', 'rb') as fp:
     ADDRESSES_DICT = json.load(fp)
+for location in ADDRESSES_DICT.keys():
+	ADDRESSES_DICT[location]['count']=0
 
 #----END GLOBAL VARIABLES----
 
